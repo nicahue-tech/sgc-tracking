@@ -2,3 +2,5 @@ venv/
 .DS_Store
 sistema.log
 reportes_generados/
+vigilante_error.log
+vigilante_salida.log
