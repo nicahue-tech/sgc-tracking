@@ -1,0 +1,13 @@
+2026-07-11 13:36:50 - INFO - programa_listas - Inicio de ejecucion automatica del sistema SGC Tracking
+2026-07-11 13:36:50 - INFO - datos_entrada - Configuracion leida correctamente desde config.txt
+2026-07-11 13:36:50 - ERROR - datos_entrada - Error inesperado leyendo el archivo csv: [Errno 1] Operation not permitted: '/Users/luis/Library/CloudStorage/OneDrive-FundacionHogardeCristo/Escritorio/informes/sgc_tracking.csv'
+2026-07-11 13:36:50 - ERROR - programa_listas - La ejecucion automatica fallo: [Errno 1] Operation not permitted: '/Users/luis/Library/CloudStorage/OneDrive-FundacionHogardeCristo/Escritorio/informes/sgc_tracking.csv'
+2026-07-11 14:10:06 - INFO - programa_listas - Inicio de ejecucion automatica del sistema SGC Tracking
+2026-07-11 14:10:06 - INFO - datos_entrada - Configuracion leida correctamente desde config.txt
+2026-07-11 14:10:07 - INFO - datos_entrada - Archivo csv cargado correctamente, con 622 filas y 28 columnas
+2026-07-11 14:10:07 - INFO - reportes - Hoja de supervisor generada: Estefania Inostroza
+2026-07-11 14:10:07 - INFO - reportes - Hoja de supervisor generada: Andres Ramos
+2026-07-11 14:10:07 - INFO - reportes - Hoja de supervisor generada: Lucia Duque
+2026-07-11 14:10:07 - INFO - reportes - Hoja de ejecutivos generada correctamente
+2026-07-11 14:10:07 - INFO - reportes - Reporte completo generado correctamente en: /Users/luis/proyectos/sgc_tracking/reportes_generados/dashboard_sgc_tracking.xlsx
+2026-07-11 14:10:07 - INFO - programa_listas - Ejecucion automatica finalizada correctamente. Reporte disponible en: /Users/luis/proyectos/sgc_tracking/reportes_generados/dashboard_sgc_tracking.xlsx
