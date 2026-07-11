@@ -4,3 +4,5 @@ sistema.log
 reportes_generados/
 vigilante_error.log
 vigilante_salida.log
+credenciales_correo.txt
+destinatarios.txt
