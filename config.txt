@@ -1,0 +1,2 @@
+ruta_informes=/Users/luis/Library/CloudStorage/OneDrive-FundacionHogardeCristo/Escritorio/informes
+nombre_archivo=sgc_tracking.csv

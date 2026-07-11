@@ -1,0 +1,10 @@
+Global;ACUERDO;5500000
+Global;REAJUSTE;15500000
+Supervisor Lucia Duque;ACUERDO;1925000
+Supervisor Lucia Duque;REAJUSTE;5500000
+Supervisor Estefania Inostroza;ACUERDO;1925000
+Supervisor Estefania Inostroza;REAJUSTE;5500000
+Supervisor Andres Ramos;ACUERDO;1650000
+Supervisor Andres Ramos;REAJUSTE;4500000
+Ejecutivo Outbound;ACUERDO;230000
+Ejecutivo Outbound;REAJUSTE;510000
