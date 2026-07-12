@@ -21,7 +21,7 @@ COL_TIPO_TRANS_ACUERDO = "Tipo Transacción (Acuerdo) (Acuerdo)"
 COL_MONTO_ACUERDO = "Monto Final (base)"
 COL_MONTO_REAJUSTE = "Variación monto"
 
-ESTADOS_ACUERDO_VALIDOS = ["Nuevo", "Vigente", "Vigente Nuevo Medio de Pago"]
+ESTADOS_ACUERDO_VALIDOS = ["Nuevo", "Vigente", "Vigente - Nuevo Medio de Pago"]
 
 MESES_ESPANOL = {
     1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL",
@@ -89,7 +89,7 @@ def calcular_dias_habiles_transcurridos(fecha_referencia):
 def filtrar_acuerdos(datos):
     filtro = (
         (datos[COL_PRODUCTO_ACUERDO] == "Membresía") &
-        (datos[COL_TIPO_TRANS_ACUERDO] == "Nuevo Acuerdo") &
+        (datos[COL_TIPO_TRANSACCION] == "Nuevo acuerdo") &
         (datos[COL_ESTADO_ACUERDO].isin(ESTADOS_ACUERDO_VALIDOS))
     )
     return datos[filtro].copy()
