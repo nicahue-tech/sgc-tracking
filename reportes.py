@@ -1,6 +1,6 @@
 import os
 from openpyxl import Workbook
-from openpyxl.styles import Font
+from openpyxl.styles import Font, PatternFill
 from bitacora import obtener_bitacora
 from calculo import calcular_resultados
 
@@ -10,6 +10,23 @@ RUTA_PROYECTO = os.path.dirname(os.path.abspath(__file__))
 RUTA_SALIDA = os.path.join(RUTA_PROYECTO, "reportes_generados")
 
 FUENTE_ENLACE = Font(color="0563C1", underline="single")
+
+RELLENO_ACUMULADO = PatternFill(start_color="DCE6F1", end_color="DCE6F1", fill_type="solid")
+RELLENO_PROYECTADO = PatternFill(start_color="FCE4D6", end_color="FCE4D6", fill_type="solid")
+RELLENO_MONTO_DIARIO = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid")
+
+RELLENO_ROJO = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
+RELLENO_NARANJO = PatternFill(start_color="FFEB9C", end_color="FFEB9C", fill_type="solid")
+RELLENO_VERDE = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")
+
+
+def obtener_relleno_porcentaje_proyectado(porcentaje):
+    if porcentaje < 70:
+        return RELLENO_ROJO
+    elif porcentaje < 100:
+        return RELLENO_NARANJO
+    else:
+        return RELLENO_VERDE
 
 ETIQUETAS_INDICADORES = [
     ("Monto acumulado", "acumulado"),
@@ -40,6 +57,12 @@ def escribir_tabla_indicadores(hoja, fila_inicio, titulo, indicadores):
     hoja.cell(row=fila, column=2, value="Valor").font = Font(bold=True)
     fila += 1
 
+    RELLENOS_POR_CLAVE = {
+        "acumulado": RELLENO_ACUMULADO,
+        "proyectado_cierre": RELLENO_PROYECTADO,
+        "monto_diario_requerido": RELLENO_MONTO_DIARIO
+    }
+
     for etiqueta, clave in ETIQUETAS_INDICADORES:
         valor = indicadores.get(clave)
         if valor is None:
@@ -50,9 +73,29 @@ def escribir_tabla_indicadores(hoja, fila_inicio, titulo, indicadores):
             valor_mostrado = f"{round(valor, 1)}%"
         else:
             valor_mostrado = round(valor)
-        hoja.cell(row=fila, column=1, value=etiqueta)
-        hoja.cell(row=fila, column=2, value=valor_mostrado)
+        celda_etiqueta = hoja.cell(row=fila, column=1, value=etiqueta)
+        celda_valor = hoja.cell(row=fila, column=2, value=valor_mostrado)
+        if clave in RELLENOS_POR_CLAVE:
+            celda_etiqueta.fill = RELLENOS_POR_CLAVE[clave]
+            celda_valor.fill = RELLENOS_POR_CLAVE[clave]
         fila += 1
+
+    meta = indicadores.get("meta")
+    proyectado_cierre = indicadores.get("proyectado_cierre")
+    if meta is not None and meta != 0:
+        porcentaje_proyectado = (proyectado_cierre / meta) * 100
+        valor_proyectado_mostrado = f"{round(porcentaje_proyectado, 1)}%"
+        relleno_proyectado_porcentaje = obtener_relleno_porcentaje_proyectado(porcentaje_proyectado)
+    else:
+        valor_proyectado_mostrado = "No aplica"
+        relleno_proyectado_porcentaje = None
+
+    celda_etiqueta_proyectado = hoja.cell(row=fila, column=1, value="Proyectado sobre la meta (%)")
+    celda_valor_proyectado = hoja.cell(row=fila, column=2, value=valor_proyectado_mostrado)
+    if relleno_proyectado_porcentaje is not None:
+        celda_etiqueta_proyectado.fill = relleno_proyectado_porcentaje
+        celda_valor_proyectado.fill = relleno_proyectado_porcentaje
+    fila += 1
 
     return fila + 1
 
@@ -102,10 +145,22 @@ def escribir_tabla_ejecutivos(hoja, fila_inicio, titulo, ejecutivos, tipo_indica
     encabezados = [
         "Ejecutivo", "Supervisor", "Tipo", "Monto acumulado", "Cantidad (Q)",
         "Cuota promedio", "Promedio diario real", "Proyectado a cierre",
-        "Meta", "Monto diario requerido", "Porcentaje avance"
+        "Meta", "Monto diario requerido", "Porcentaje avance", "Proyectado %"
     ]
+    COLUMNA_ACUMULADO = 4
+    COLUMNA_PROYECTADO = 8
+    COLUMNA_MONTO_DIARIO = 10
+    COLUMNA_PROYECTADO_PORCENTAJE = 12
+    RELLENOS_POR_COLUMNA = {
+        COLUMNA_ACUMULADO: RELLENO_ACUMULADO,
+        COLUMNA_PROYECTADO: RELLENO_PROYECTADO,
+        COLUMNA_MONTO_DIARIO: RELLENO_MONTO_DIARIO
+    }
     for columna, encabezado in enumerate(encabezados, start=1):
-        hoja.cell(row=fila, column=columna, value=encabezado).font = Font(bold=True)
+        celda_encabezado = hoja.cell(row=fila, column=columna, value=encabezado)
+        celda_encabezado.font = Font(bold=True)
+        if columna in RELLENOS_POR_COLUMNA:
+            celda_encabezado.fill = RELLENOS_POR_COLUMNA[columna]
     fila += 1
 
     lista_ordenada = sorted(
@@ -128,6 +183,14 @@ def escribir_tabla_ejecutivos(hoja, fila_inicio, titulo, ejecutivos, tipo_indica
         monto_diario_mostrado = "No aplica" if indicadores["monto_diario_requerido"] is None else round(indicadores["monto_diario_requerido"])
         porcentaje_mostrado = "No aplica" if indicadores["porcentaje_avance_meta"] is None else f"{round(indicadores['porcentaje_avance_meta'], 1)}%"
 
+        if indicadores["meta"] is not None and indicadores["meta"] != 0:
+            porcentaje_proyectado = (indicadores["proyectado_cierre"] / indicadores["meta"]) * 100
+            porcentaje_proyectado_mostrado = f"{round(porcentaje_proyectado, 1)}%"
+            relleno_proyectado_porcentaje = obtener_relleno_porcentaje_proyectado(porcentaje_proyectado)
+        else:
+            porcentaje_proyectado_mostrado = "No aplica"
+            relleno_proyectado_porcentaje = None
+
         valores_fila = [
             nombre_ejecutivo,
             datos_ejecutivo["supervisor"],
@@ -139,10 +202,15 @@ def escribir_tabla_ejecutivos(hoja, fila_inicio, titulo, ejecutivos, tipo_indica
             round(indicadores["proyectado_cierre"]),
             meta_mostrada,
             monto_diario_mostrado,
-            porcentaje_mostrado
+            porcentaje_mostrado,
+            porcentaje_proyectado_mostrado
         ]
         for columna, valor in enumerate(valores_fila, start=1):
-            hoja.cell(row=fila, column=columna, value=valor)
+            celda = hoja.cell(row=fila, column=columna, value=valor)
+            if columna in RELLENOS_POR_COLUMNA:
+                celda.fill = RELLENOS_POR_COLUMNA[columna]
+            if columna == COLUMNA_PROYECTADO_PORCENTAJE and relleno_proyectado_porcentaje is not None:
+                celda.fill = relleno_proyectado_porcentaje
         fila += 1
 
         total_acumulado += indicadores["acumulado"]
@@ -159,15 +227,28 @@ def escribir_tabla_ejecutivos(hoja, fila_inicio, titulo, ejecutivos, tipo_indica
     monto_diario_total_mostrado = round(total_monto_diario_requerido) if hay_meta else "No aplica"
     porcentaje_total_mostrado = f"{round((total_acumulado / total_meta) * 100, 1)}%" if hay_meta and total_meta != 0 else "No aplica"
 
+    if hay_meta and total_meta != 0:
+        porcentaje_proyectado_total = (total_proyectado / total_meta) * 100
+        porcentaje_proyectado_total_mostrado = f"{round(porcentaje_proyectado_total, 1)}%"
+        relleno_proyectado_total = obtener_relleno_porcentaje_proyectado(porcentaje_proyectado_total)
+    else:
+        porcentaje_proyectado_total_mostrado = "No aplica"
+        relleno_proyectado_total = None
+
     valores_totales = [
         "Total", "", "",
         round(total_acumulado), total_cantidad, round(cuota_promedio_total),
         round(total_promedio_diario), round(total_proyectado),
-        meta_total_mostrada, monto_diario_total_mostrado, porcentaje_total_mostrado
+        meta_total_mostrada, monto_diario_total_mostrado, porcentaje_total_mostrado,
+        porcentaje_proyectado_total_mostrado
     ]
     for columna, valor in enumerate(valores_totales, start=1):
         celda = hoja.cell(row=fila, column=columna, value=valor)
         celda.font = Font(bold=True)
+        if columna in RELLENOS_POR_COLUMNA:
+            celda.fill = RELLENOS_POR_COLUMNA[columna]
+        if columna == COLUMNA_PROYECTADO_PORCENTAJE and relleno_proyectado_total is not None:
+            celda.fill = relleno_proyectado_total
     fila += 1
 
     return fila + 1
@@ -219,6 +300,7 @@ def generar_hojas_supervisores(libro, resultados):
         hoja.column_dimensions["I"].width = 14
         hoja.column_dimensions["J"].width = 16
         hoja.column_dimensions["K"].width = 20
+        hoja.column_dimensions["L"].width = 16
 
         hoja.cell(row=3, column=1, value=f"Supervisor: {supervisor}").font = Font(bold=True, size=13)
         fila = 5
@@ -242,8 +324,8 @@ def generar_hojas_supervisores(libro, resultados):
 
 def generar_hoja_ejecutivos(libro, resultados):
     hoja = libro.create_sheet(title="Ejecutivos")
-    anchos = [32, 22, 12, 16, 12, 16, 18, 18, 14, 16, 20]
-    letras_columnas = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"]
+    anchos = [32, 22, 12, 16, 12, 16, 18, 18, 14, 16, 20, 16]
+    letras_columnas = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"]
     for letra, ancho in zip(letras_columnas, anchos):
         hoja.column_dimensions[letra].width = ancho
 
