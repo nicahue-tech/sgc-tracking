@@ -1,8 +1,9 @@
 import os
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill
 from bitacora import obtener_bitacora
 from calculo import calcular_resultados
+from correo_compensatorio import RUTA_SALIDA as RUTA_ARCHIVO_COMPENSATORIO
 
 log = obtener_bitacora("reportes")
 
@@ -336,14 +337,71 @@ def generar_hoja_ejecutivos(libro, resultados):
     return hoja
 
 
+def generar_hoja_cumplimiento_ejecutivos(libro):
+    hoja = libro.create_sheet(title="Cumplimiento Ejecutivos")
+    anchos = [14, 34, 24, 18, 20, 14]
+    letras_columnas = ["A", "B", "C", "D", "E", "F"]
+    for letra, ancho in zip(letras_columnas, anchos):
+        hoja.column_dimensions[letra].width = ancho
+
+    hoja.cell(row=3, column=1, value="CUMPLIMIENTO EJECUTIVOS").font = Font(bold=True, size=13)
+    hoja.cell(
+        row=4, column=1,
+        value=(
+            "Hoja informativa, tomada tal cual del reporte diario de compensatorio "
+            "que llega por correo. No se cruza ni se relaciona con los nombres "
+            "normalizados del resto del sistema."
+        )
+    )
+
+    fila = 6
+
+    if not os.path.isfile(RUTA_ARCHIVO_COMPENSATORIO):
+        hoja.cell(
+            row=fila, column=1,
+            value="Sin datos disponibles todavia, no se ha descargado el reporte de hoy."
+        )
+        log.info("Hoja Cumplimiento Ejecutivos generada sin datos, no se encontro el archivo temporal.")
+        return hoja
+
+    libro_origen = load_workbook(RUTA_ARCHIVO_COMPENSATORIO, data_only=True)
+    hoja_origen = libro_origen.active
+
+    encabezados = [
+        "Supervisor", "Ejecutivo", "% Cumplimiento Productivo",
+        "% Compensacion", "% Cumplimiento Total", "% Proyectado"
+    ]
+    for columna, encabezado in enumerate(encabezados, start=1):
+        hoja.cell(row=fila, column=columna, value=encabezado).font = Font(bold=True)
+    fila += 1
+
+    filas_origen = [
+        fila_datos for fila_datos in hoja_origen.iter_rows(min_row=2, values_only=True)
+        if fila_datos and fila_datos[0] is not None
+    ]
+
+    for fila_datos in filas_origen:
+        supervisor, ejecutivo, cumpl_productivo, compensacion, cumpl_total, proyectado = fila_datos[:6]
+        hoja.cell(row=fila, column=1, value=supervisor)
+        hoja.cell(row=fila, column=2, value=ejecutivo)
+        for columna, valor in zip([3, 4, 5, 6], [cumpl_productivo, compensacion, cumpl_total, proyectado]):
+            celda = hoja.cell(row=fila, column=columna, value=valor)
+            celda.number_format = "0.0%"
+        fila += 1
+
+    log.info(f"Hoja Cumplimiento Ejecutivos generada con {len(filas_origen)} ejecutivos.")
+    return hoja
+
+
 def generar_reporte_completo(resultados):
     libro = Workbook()
 
     hoja_global = generar_hoja_global(libro, resultados)
     hojas_supervisores = generar_hojas_supervisores(libro, resultados)
     hoja_ejecutivos = generar_hoja_ejecutivos(libro, resultados)
+    hoja_cumplimiento_ejecutivos = generar_hoja_cumplimiento_ejecutivos(libro)
 
-    todas_las_hojas = [hoja_global] + hojas_supervisores + [hoja_ejecutivos]
+    todas_las_hojas = [hoja_global] + hojas_supervisores + [hoja_ejecutivos, hoja_cumplimiento_ejecutivos]
     nombres_hojas = [hoja.title for hoja in todas_las_hojas]
 
     for hoja in todas_las_hojas:
