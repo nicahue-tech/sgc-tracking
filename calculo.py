@@ -10,6 +10,7 @@ RUTA_PROYECTO = os.path.dirname(os.path.abspath(__file__))
 RUTA_NOMINA = os.path.join(RUTA_PROYECTO, "nomina.txt")
 RUTA_METAS = os.path.join(RUTA_PROYECTO, "metas.txt")
 RUTA_DIAS_HABILES = os.path.join(RUTA_PROYECTO, "dias_habiles.txt")
+RUTA_FERIADOS = os.path.join(RUTA_PROYECTO, "feriados.txt")
 
 COL_FECHA = "Fecha de creación"
 COL_EJECUTIVO = "Ejecutivo de Venta Movimiento"
@@ -75,12 +76,28 @@ def cargar_dias_habiles_mes():
     return dias_por_mes
 
 
-def calcular_dias_habiles_transcurridos(fecha_referencia):
+def cargar_feriados():
+    feriados = set()
+    if not os.path.isfile(RUTA_FERIADOS):
+        log.warning("No se encontro el archivo feriados.txt, no se excluira ningun feriado del conteo")
+        return feriados
+    with open(RUTA_FERIADOS, "r", encoding="utf-8") as archivo:
+        for linea in archivo:
+            linea = linea.strip()
+            if not linea:
+                continue
+            fecha = datetime.strptime(linea, "%d-%m-%Y").date()
+            feriados.add(fecha)
+    log.info(f"Feriados cargados: {len(feriados)} fechas")
+    return feriados
+
+
+def calcular_dias_habiles_transcurridos(fecha_referencia, feriados):
     primer_dia_mes = fecha_referencia.replace(day=1)
     dias_transcurridos = 0
     dia_actual = primer_dia_mes
     while dia_actual.date() <= fecha_referencia.date():
-        if dia_actual.weekday() < 5:
+        if dia_actual.weekday() < 5 and dia_actual.date() not in feriados:
             dias_transcurridos += 1
         dia_actual = dia_actual + pd.Timedelta(days=1)
     return dias_transcurridos
@@ -175,11 +192,12 @@ def calcular_resultados(fecha_referencia=None):
     nomina = cargar_nomina()
     metas = cargar_metas()
     dias_por_mes = cargar_dias_habiles_mes()
+    feriados = cargar_feriados()
 
     mes_actual_nombre = MESES_ESPANOL[fecha_referencia.month]
     dias_totales_mes = dias_por_mes.get(mes_actual_nombre, 0)
 
-    dias_transcurridos = calcular_dias_habiles_transcurridos(fecha_referencia)
+    dias_transcurridos = calcular_dias_habiles_transcurridos(fecha_referencia, feriados)
 
     datos = cargar_datos_crudos()
     datos[COL_FECHA] = pd.to_datetime(datos[COL_FECHA])
